@@ -7,7 +7,9 @@ module ExtendedWatchersUserPatch
     base.class_eval do
       unloadable
 
-      alias_method_chain :allowed_to?, :extwatch
+      #alias_method_chain :allowed_to?, :extwatch
+      alias_method :allowed_to_without_extwatch?, :allowed_to?
+      alias_method :allowed_to?, :allowed_to_with_extwatch?
     end
   end
 

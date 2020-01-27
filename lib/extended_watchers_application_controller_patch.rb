@@ -6,7 +6,9 @@ module ExtendedWatchersApplicationControllerPatch
     base.class_eval do
       unloadable
 
-      alias_method_chain :authorize, :extwatch
+      #alias_method_chain :authorize, :extwatch
+      alias_method :authorize_without_extwatch, :authorize
+      alias_method :authorize, :authorize_with_extwatch 
     end
   end
 

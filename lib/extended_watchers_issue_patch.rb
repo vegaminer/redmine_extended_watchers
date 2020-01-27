@@ -8,18 +8,18 @@ module ExtendedWatchersIssuePatch
         base.class_eval do
             unloadable
 
-        #alias_method_chain :visible?, :extwatch
-        alias_method :visible_without_extwatch?, :visible?
-        alias_method :visible?, :visible_with_extwatch?
+            #alias_method_chain :visible?, :extwatch
+            alias_method :visible_without_extwatch?, :visible?
+            alias_method :visible?, :visible_with_extwatch?
 
-        #alias_method_chain :attributes_editable?, :extwatch
-        alias_method :attributes_editable_without_extwatch?, :attributes_editable?
-        alias_method :attributes_editable?, :attributes_editable_with_extwatch?
+            #alias_method_chain :attributes_editable?, :extwatch
+            alias_method :attributes_editable_without_extwatch?, :attributes_editable?
+            alias_method :attributes_editable?, :attributes_editable_with_extwatch?
 
             class << self
                 #alias_method_chain :visible_condition, :extwatch
-                alias_method :visible_condition_without_extwatch?, :visible_condition?
-                    alias_method :visible_condition?, :visible_condition_with_extwatch?
+                alias_method :visible_condition_without_extwatch, :visible_condition
+                alias_method :visible_condition, :visible_condition_with_extwatch
             end
         end
     end
