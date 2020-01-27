@@ -8,23 +8,28 @@ module ExtendedWatchersIssuePatch
         base.class_eval do
             unloadable
 
-            alias_method_chain :visible?, :extwatch
+        alias_method :visible_without_extwatch?, :extwatch?
+        alias_method :extwatch?, :visible_with_extwatch?
+
+        #alias_method_chain :attributes_editable?, :extwatch
+        alias_method :attributes_editable_without_extwatch?, :extwatch?
+        alias_method :extwatch?, :attributes_editable_with_extwatch?
+
             class << self
-              alias_method_chain :visible_condition, :extwatch
+          #alias_method_chain :visible_condition, :extwatch
+          alias_method :visible_condition_without_extwatch?, :extwatch?
+          alias_method :extwatch?, :visible_condition_with_extwatch?
             end
-
         end
-
     end
 
     module ClassMethods
       def visible_condition_with_extwatch(user, options={})
-
         watched_issues = []
+
         if user.logged?
           user_ids = [user.id] + user.groups.map(&:id).compact
           watched_issues = Issue.watched_by(user).joins(:project => :enabled_modules).where("#{EnabledModule.table_name}.name = 'issue_tracking'").map(&:id)
-
         end
 
         prj_clause = options.nil? || options[:project].nil? ? nil : " #{Project.table_name}.id = #{options[:project].id}"
@@ -34,32 +39,35 @@ module ExtendedWatchersIssuePatch
             (prj_clause.nil? ? "" : " AND ( #{prj_clause} )") unless watched_issues.empty?
 
         "( " + visible_condition_without_extwatch(user, options) + "#{watched_group_issues_clause}) "
-
       end
     end
 
     module InstanceMethods
         def visible_with_extwatch?(usr=nil)
           visible = visible_without_extwatch?(usr)
+        logger.debug "visible_without_extwatch #{visible}"
+
           return true if visible
 
           if (usr || User.current).logged?
             visible =  self.watched_by?(usr || User.current)
           end
 
-          logger.error "visible_with_extwatch #{visible}"
+        logger.debug "visible_with_extwatch #{visible}"
           visible
         end
 
-        # Override the acts_as_watchble default to allow any user with view issues
-        # rights to watch/see this issue.
-        def addable_watcher_users
-          users = self.project.users.sort - self.watcher_users
-          users.reject! {|user| !user.allowed_to?(:view_issues, self.project)}
-          users
+      def attributes_editable_with_extwatch?(user=User.current)
+        if self.watched_by?(user) && self.assigned_to_id != user.id && self.author_id != user.id
+          if user.admin?
+            true
+          else
+            roles = user.roles_for_project(project).select {|r| r.has_permission?(:edit_watched_issues)}
+            roles.any? {|r| r.permissions_all_trackers?(:edit_watched_issues) || r.permissions_tracker_ids?(:edit_watched_issues, self.tracker_id)}
+          end
+        else
+          attributes_editable_without_extwatch?(user)
         end
-        
+        end
     end
-
 end
-

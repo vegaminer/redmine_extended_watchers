@@ -6,7 +6,12 @@ require_dependency 'extended_watchers_issue_patch'
 require_dependency 'extended_watchers_controller_patch'
 require_dependency 'extended_watchers_user_patch'
 
-Rails.configuration.to_prepare do
+if Rails::VERSION::MAJOR >= 5 and Rails::VERSION::MINOR >= 1
+  reloader = ActiveSupport::Reloader
+else
+  reloader = ActionDispatch::Callbacks
+end
+reloader.to_prepare do
   unless Issue.included_modules.include?(ExtendedWatchersIssuePatch)
       Issue.send(:include, ExtendedWatchersIssuePatch)
   end
@@ -36,4 +41,8 @@ Redmine::Plugin.register :redmine_extended_watchers do
   url 'https://github.com/maxrossello/redmine_extended_watchers.git'
   author_url 'https://github.com/maxrossello'
   requires_redmine :version_or_higher => '2.1.0'
+
+  project_module :issue_tracking do
+    permission :edit_watched_issues, {:issues => [:edit, :update, :bulk_edit, :bulk_update], :journals => [:new], :attachments => :upload}
+  end
 end
