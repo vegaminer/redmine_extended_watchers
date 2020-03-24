@@ -46,7 +46,7 @@ module ExtendedWatchersIssuePatch
     module InstanceMethods
         def visible_with_extwatch?(usr=nil)
           visible = visible_without_extwatch?(usr)
-        logger.debug "visible_without_extwatch #{visible}"
+          logger.debug "visible_without_extwatch #{visible}"
 
           return true if visible
 
@@ -54,21 +54,20 @@ module ExtendedWatchersIssuePatch
             visible =  self.watched_by?(usr || User.current)
           end
 
-        logger.debug "visible_with_extwatch #{visible}"
+          logger.debug "visible_with_extwatch #{visible}"
           visible
         end
 
-      def attributes_editable_with_extwatch?(user=User.current)
-        if self.watched_by?(user) && self.assigned_to_id != user.id && self.author_id != user.id
-          if user.admin?
-            true
-          else
+        def attributes_editable_with_extwatch?(user=User.current)
+          if self.watched_by?(user) && self.assigned_to_id != user.id && self.author_id != user.id
+            return true if user.admin?
+	    return true if user_tracker_permission?(user, :edit_issues)
+
             roles = user.roles_for_project(project).select {|r| r.has_permission?(:edit_watched_issues)}
             roles.any? {|r| r.permissions_all_trackers?(:edit_watched_issues) || r.permissions_tracker_ids?(:edit_watched_issues, self.tracker_id)}
+          else
+            attributes_editable_without_extwatch?(user)
           end
-        else
-          attributes_editable_without_extwatch?(user)
-        end
         end
     end
 end
